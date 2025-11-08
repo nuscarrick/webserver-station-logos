@@ -129,7 +129,7 @@
         <div class="popup-window" id="popup-panel-station-logo">
           <div class="flex-container flex-column flex-phone flex-phone-column" style="height: calc(100%);">
             <div class="popup-header hover-brighten flex-center">
-              <p class="color-4" style="margin: 0; padding-left: 10px;">Station Logo</p>
+              <p class="color-4" style="margin: 0; padding-left: 10px;">İstasyon Logosu</p>
               <button class="popup-close">✖</button>
             </div>
             <div class="popup-content text-left flex-container flex-phone flex-column" style="flex: 1;">
