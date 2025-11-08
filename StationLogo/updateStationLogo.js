@@ -226,7 +226,7 @@
     }
 
     function getStationLogoURL(piCode, frequency, size) {
-        return `${logoBaseURL}?fx=${frequency}&pi=${piCode === '?' ? 0 : piCode}&size=${size}&pos=${localStorage.getItem('qthLatitude')},${localStorage.getItem('qthLongitude')}`;
+        return `${logoBaseURL}?fx=${frequency*1000}&pi=${piCode === '?' ? 0 : piCode}&size=${size}&pos=${localStorage.getItem('qthLatitude')},${localStorage.getItem('qthLongitude')}`;
     }
 
     let lastLogoState = {
