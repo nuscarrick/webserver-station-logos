@@ -84,7 +84,7 @@
         fetchFirstLine().then(newVersion => {
             if (newVersion) {
                 if (newVersion !== pluginVersionCheck) {
-                    let updateConsoleText = "There is a new version of this plugin available";
+                    let updateConsoleText = t('plugin.newVersionAvailable');
                     // Any custom code here
 
                     console.log(`[${pluginName}] ${updateConsoleText}`);
@@ -98,9 +98,9 @@
               const pluginSettings = document.getElementById('plugin-settings');
               if (pluginSettings) {
                 const currentText = pluginSettings.textContent.trim();
-                const newText = `<a href="${urlUpdateLink}" target="_blank">[${pluginName}] Update available: ${pluginVersionCheck} --> ${newVersion}</a><br>`;
+                const newText = `<a href="${urlUpdateLink}" target="_blank">[${pluginName}] ${t('plugin.updateAvailable')}: ${pluginVersionCheck} --> ${newVersion}</a><br>`;
 
-                if (currentText === 'No plugin settings are available.') {
+                if (currentText === t('plugin.noPluginSettings')) {
                   pluginSettings.innerHTML = newText;
                 } else {
                   pluginSettings.innerHTML += ' ' + newText;
@@ -159,7 +159,7 @@
 
     // The new HTML code for the <div> element with the play / stop button
     var buttonHTML = '<div class="panel-10 no-bg h-100 m-0 m-right-20 hide-phone" style="width: 80px;margin-right: 20px !important;">' +
-                         '<button class="playbutton" aria-label="Play / Stop Button"><i class="fa-solid fa-play fa-lg"></i></button>' +
+                         '<button class="playbutton" aria-label="' + t('plugin.stationLogoPlugin.playStopButton') + '"><i class="fa-solid fa-play fa-lg"></i></button>' +
                       '</div>';
     // Select the original <div> element
     var originalDiv = document.querySelector('.panel-10');
@@ -190,12 +190,12 @@
                     <div style="display:inline-block">
                         <span style="margin-left: 20px;display: block;margin-top: 2px;" class="data-flag"></span>
                     </div>
-                    <span class="pointer stereo-container" style="position: relative; margin-left: 20px;" role="button" aria-label="Stereo / Mono toggle" tabindex="0">
+                    <span class="pointer stereo-container" style="position: relative; margin-left: 20px;" role="button" aria-label="${t('plugin.stationLogoPlugin.stereoMonoToggle')}" tabindex="0">
                         <div class="circle-container">
                             <div class="circle data-st circle1"></div>
                             <div class="circle data-st circle2"></div>
                         </div>
-                        <span class="overlay tooltip" data-tooltip="Stereo / Mono toggle. <br><strong>Click to toggle."></span>
+                        <span class="overlay tooltip" data-tooltip="${t('plugin.stationLogoPlugin.stereoMonoToggle')}. <br><strong>${t('menu.clickToToggle')}.</strong></span>
                     </span>
                     <span style="margin-left: 15px;" class="data-ms">MS</span>
             </h3>
