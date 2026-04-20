@@ -487,8 +487,61 @@ async function checkRemotePaths(Program, ituCode, piCode, frequency) {
     }
 }
 
-function getStationLogoURL(piCode, frequency, size) {
-  return `${logoBaseURL}?fx=${frequency*1000}&pi=${piCode === '?' ? 0 : piCode}&size=${size}&pos=${localStorage.getItem('qthLatitude')},${localStorage.getItem('qthLongitude')}`;
+function getStationLogoURL(piCode, frequency, size = 64) {
+  const lang = getDefaultLang() || 'en';
+  return `${logoBaseURL}?fx=${frequency*1000}&pi=${piCode === '?' ? 0 : piCode}&size=${size}&pos=${localStorage.getItem('qthLatitude') || '48.401444'},${localStorage.getItem('qthLongitude') || '11.741081'}&lang=${lang}`;
+}
+
+// Function to set the image requested size by using a canvas forcing the size of the image
+function setImageRequestedSize($img, url, targetSizePx) {
+  // Many remote logo endpoints ignore "size" and always return a fixed resolution (e.g. 600x600).
+  // This enforces the requested size in the UI, and (when CORS allows) downscales to a real bitmap.
+  $img.css({
+    width: `${targetSizePx}px`,
+    height: `${targetSizePx}px`,
+    objectFit: 'contain'
+  });
+
+  const imgEl = $img.get(0);
+  if (!imgEl) return;
+
+  const probe = new Image();
+  probe.crossOrigin = 'anonymous';
+
+  probe.onload = () => {
+    // If we can't draw cross-origin, we'll fall back to setting src directly.
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = targetSizePx;
+      canvas.height = targetSizePx;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+      ctx.clearRect(0, 0, targetSizePx, targetSizePx);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // Fit inside target box while preserving aspect ratio
+      const scale = Math.min(targetSizePx / probe.naturalWidth, targetSizePx / probe.naturalHeight);
+      const drawW = Math.max(1, Math.round(probe.naturalWidth * scale));
+      const drawH = Math.max(1, Math.round(probe.naturalHeight * scale));
+      const dx = Math.floor((targetSizePx - drawW) / 2);
+      const dy = Math.floor((targetSizePx - drawH) / 2);
+
+      ctx.drawImage(probe, dx, dy, drawW, drawH);
+
+      imgEl.src = canvas.toDataURL('image/png');
+    } catch (e) {
+      imgEl.src = url;
+    }
+  };
+
+  probe.onerror = () => {
+    imgEl.src = url;
+  };
+
+  probe.src = url;
 }
 
 // Function to update the station logo based on various parameters
@@ -506,15 +559,25 @@ function getStationLogoURL(piCode, frequency, size) {
 
 // Function to update the station logo based on various parameters
 function updateStationLogo(piCode, ituCode, Program, frequency) {
-    const tooltipContainer = $('.panel-30');
+  const logoURL = getStationLogoURL(piCode, frequency, 300);
+  // setImageRequestedSize(logoImage, logoURL, 64);
+  logoImage.attr('src', logoURL);
+  logoImage.css('cursor', 'pointer');
+  logoImage.off('click');
+  logoImage.on('click', () => {
+      // setImageRequestedSize($('#large-station-logo'), logoURL, 300);
+      $('#large-station-logo').attr('src', logoURL);
+      $('#popup-panel-station-logo').resizable("disable");
+      togglePopup('#popup-panel-station-logo');
+  });
 
-    if (logoLoadingInProgress) return;
+  if (logoLoadingInProgress) return;
 
-    let oldPiCode = logoImage.attr('data-picode');
-    let oldItuCode = logoImage.attr('data-itucode');
-    let oldProgram = logoImage.attr('data-Program');
+  let oldPiCode = logoImage.attr('data-picode');
+  let oldItuCode = logoImage.attr('data-itucode');
+  let oldProgram = logoImage.attr('data-Program');
 
-    if (piCode === '' || piCode === null || piCode.includes('?')) piCode = '?';
+  if (piCode === '' || piCode === null || piCode.includes('?')) piCode = '?';
     if (ituCode === '' || ituCode === null || ituCode.includes('?')) ituCode = '?';
     if (!Program) Program = '';
 
@@ -530,9 +593,9 @@ function updateStationLogo(piCode, ituCode, Program, frequency) {
 
     // Check if the frequency has changed
     if (frequency !== currentFrequency) {
-        currentFrequency = frequency;
-        logoLoadedForCurrentFrequency = false; 
-        defaultLogoLoadedForFrequency[frequency] = false;
+      currentFrequency = frequency;
+      logoLoadedForCurrentFrequency = false; 
+      defaultLogoLoadedForFrequency[frequency] = false;
     }
 
     // Only load the logo if the frequency has changed or if the PI code, ITU code, or Program have changed
@@ -543,57 +606,98 @@ function updateStationLogo(piCode, ituCode, Program, frequency) {
         logoImage.attr('data-Program', Program);
         logoImage.attr('data-frequency', frequency);
         logoImage.attr('title', `Plugin Version: ${pluginVersion}`);
-
-        // Handle async loading sequence
-        (async () => {
-            let formattedProgram = Program.toUpperCase().replace(/[\/\-\*\+\:\.\,\§\%\&\"!\?\|\>\<\=\)\(\[\]´`'~#\s]/g, '');
-            let cleanPiCode = piCode.toUpperCase().trim();
-
-            if (cleanPiCode !== '?') {
-                if (formattedProgram !== "") {
-                    console.log(cleanPiCode + '_' + formattedProgram + '.svg or ' + cleanPiCode + '_' + formattedProgram + '.png');
-                }
-
-                let localFoundPath = null;
-
-                // 1. Search Local First
-                if (enableSearchLocal) {
-                    localFoundPath = await checkLocalPaths(cleanPiCode, formattedProgram);
-                }
-
-                if (localFoundPath) {
-                    logoImage.attr('src', getBustedUrl(localFoundPath)).attr('alt', `Logo for station ${cleanPiCode}`).css('display', 'block');
-                    console.log(`[Local Search] Found local logo: ${localFoundPath}`);
-                    
-                    if (Program !== oldProgram) {
-                        LogoSearch(cleanPiCode, ituCode, Program);
-                    }
-                    logoLoadedForCurrentFrequency = true;
-                    logoLoadingInProgress = false;
-                } else {
-                    // 2. Search Remote
-                    if (ituCode.includes("USA")) ituCode = 'USA';
-                    
-                    if (ituCode !== '?') {
-                        const remoteLogo = await checkRemotePaths(Program, ituCode, cleanPiCode, frequency);
-                        if (remoteLogo && remoteLogo !== "DEFAULT") {
-                            if (Program !== oldProgram) {
-                                LogoSearch(cleanPiCode, ituCode, Program);
-                            }
-                            logoLoadingInProgress = false;
-                        }
-                    } else {
-                        await handleFallbackSearch(Program, ituCode, cleanPiCode, frequency, null);
-                    }
-                }
-            } else {
-                // Instantly load default logo if piCode is "?"
-                await showDefaultLogo(frequency);
-            }
-        })();
     }
 }
 
+// Function to update the station logo based on various parameters
+// function updateStationLogo(piCode, ituCode, Program, frequency) {
+//     const tooltipContainer = $('.panel-30');
+
+//     if (logoLoadingInProgress) return;
+
+//     let oldPiCode = logoImage.attr('data-picode');
+//     let oldItuCode = logoImage.attr('data-itucode');
+//     let oldProgram = logoImage.attr('data-Program');
+
+//     if (piCode === '' || piCode === null || piCode.includes('?')) piCode = '?';
+//     if (ituCode === '' || ituCode === null || ituCode.includes('?')) ituCode = '?';
+//     if (!Program) Program = '';
+
+//     // If the PI code has changed, trigger a delay to check again
+//     if (piCode !== oldPiCode && updateLogoOnPiCodeChange) {
+//         setTimeout(() => {
+//             if (piCode !== oldPiCode && updateLogoOnPiCodeChange) {
+//                 logoLoadedForCurrentFrequency = false;
+//                 defaultLogoLoadedForFrequency[frequency] = false;
+//             }
+//         }, 1500);
+//     }
+
+//     // Check if the frequency has changed
+//     if (frequency !== currentFrequency) {
+//         currentFrequency = frequency;
+//         logoLoadedForCurrentFrequency = false; 
+//         defaultLogoLoadedForFrequency[frequency] = false;
+//     }
+
+//     // Only load the logo if the frequency has changed or if the PI code, ITU code, or Program have changed
+//     if (!logoLoadedForCurrentFrequency || (updateLogoOnPiCodeChange && (piCode !== oldPiCode || ituCode !== oldItuCode || Program !== oldProgram))) {
+//         logoLoadingInProgress = true;
+//         logoImage.attr('data-picode', piCode);
+//         logoImage.attr('data-itucode', ituCode);
+//         logoImage.attr('data-Program', Program);
+//         logoImage.attr('data-frequency', frequency);
+//         logoImage.attr('title', `Plugin Version: ${pluginVersion}`);
+
+//         // Handle async loading sequence
+//         (async () => {
+//             let formattedProgram = Program.toUpperCase().replace(/[\/\-\*\+\:\.\,\§\%\&\"!\?\|\>\<\=\)\(\[\]´`'~#\s]/g, '');
+//             let cleanPiCode = piCode.toUpperCase().trim();
+
+//             if (cleanPiCode !== '?') {
+//                 if (formattedProgram !== "") {
+//                     console.log(cleanPiCode + '_' + formattedProgram + '.svg or ' + cleanPiCode + '_' + formattedProgram + '.png');
+//                 }
+
+//                 let localFoundPath = null;
+
+//                 // 1. Search Local First
+//                 if (enableSearchLocal) {
+//                     localFoundPath = await checkLocalPaths(cleanPiCode, formattedProgram);
+//                 }
+
+//                 if (localFoundPath) {
+//                     logoImage.attr('src', getBustedUrl(localFoundPath)).attr('alt', `Logo for station ${cleanPiCode}`).css('display', 'block');
+//                     console.log(`[Local Search] Found local logo: ${localFoundPath}`);
+                    
+//                     if (Program !== oldProgram) {
+//                         LogoSearch(cleanPiCode, ituCode, Program);
+//                     }
+//                     logoLoadedForCurrentFrequency = true;
+//                     logoLoadingInProgress = false;
+//                 } else {
+//                     // 2. Search Remote
+//                     if (ituCode.includes("USA")) ituCode = 'USA';
+                    
+//                     if (ituCode !== '?') {
+//                         const remoteLogo = await checkRemotePaths(Program, ituCode, cleanPiCode, frequency);
+//                         if (remoteLogo && remoteLogo !== "DEFAULT") {
+//                             if (Program !== oldProgram) {
+//                                 LogoSearch(cleanPiCode, ituCode, Program);
+//                             }
+//                             logoLoadingInProgress = false;
+//                         }
+//                     } else {
+//                         await handleFallbackSearch(Program, ituCode, cleanPiCode, frequency, null);
+//                     }
+//                 }
+//             } else {
+//                 // Instantly load default logo if piCode is "?"
+//                 await showDefaultLogo(frequency);
+//             }
+//         })();
+//     }
+// }
 
 let lastLogoState = {
     piCode: null,
