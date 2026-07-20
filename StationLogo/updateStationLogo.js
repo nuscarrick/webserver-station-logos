@@ -104,6 +104,7 @@ function checkUpdate(setupOnly, pluginName, urlUpdateLink, urlFetchLink) {
       if (newVersion) {
           if (newVersion !== pluginVersionCheck) {
               let updateConsoleText = t('plugin.newVersionAvailable');
+              // Any custom code here
               
               console.log(`[${pluginName}] ${updateConsoleText}`);
               setupNotify(pluginVersionCheck, newVersion, pluginName, urlUpdateLink);
@@ -168,7 +169,7 @@ $('.wrapper-outer.main-content').append(stationLogoPopupHTML);
 // Define the HTML code as a string for the logo container
 var LogoContainerHtml = '<div style="width: 5%;"></div> <!-- Spacer -->' +
     '<div class="panel-30 m-0 hide-phone" style="width: 48%" >' +
-    '    <div id="logo-container-desktop" style="width: 215px; height: 60px; display: flex; justify-content: center; align-items: center; margin: auto;">' +
+    '    <div id="logo-container-desktop" style="width: 215px; height: 64px; display: flex; justify-content: center; align-items: center; margin: auto;">' +
     '        <img id="station-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAAtJREFUGFdjYAACAAAFAAGq1chRAAAAAElFTkSuQmCC" alt="station-logo-desktop" style="max-width: 140px; max-height: 100%; margin-top: 30px; display: block; cursor: pointer;">' +
     '    </div>' +
     '</div>';
@@ -195,9 +196,9 @@ var flagsContainerPhone = document.getElementById('flags-container-phone');
 // Create the new HTML code for the replacement
 var MobileHTML = `
     <div id="flags-container-phone" class="panel-33 user-select-none">
-        <h2 class="show-phone">    
-            <div id="logo-container-phone" style="width: auto; height: 70px; display: flex; justify-content: center; align-items: center; margin: auto;">                 
-                <img id="station-logo-phone" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAAtJREFUGFdjYAACAAAFAAGq1chRAAAAAElFTkSuQmCC" alt="station-logo-phone" style="max-width: 160px; padding: 1px 2px; max-height: 100%; margin-top: 0px; display: block;">    
+        <h2 class="show-phone">
+            <div id="logo-container-phone" style="width: auto; height: 70px; display: flex; justify-content: center; align-items: center; margin: auto;">
+                <img id="station-logo-phone" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAAtJREFUGFdjYAACAAAFAAGq1chRAAAAAElFTkSuQmCC" alt="station-logo-phone" style="max-width: 160px; padding: 1px 2px; max-height: 100%; margin-top: 0px; display: block;">
             </div>
             <br>
             <div class="data-pty text-color-default"></div>
@@ -317,7 +318,8 @@ $('#station-logo, #station-logo-phone').on('mousedown touchstart', function(e) {
 
 // Centralized function to load the default logo properly
 async function showDefaultLogo(frequency) {
-    let finalDefaultPath = defaultServerPath;
+    // let finalDefaultPath = defaultServerPath;
+    let finalDefaultPath = getStationLogoURL(0, frequency, 64);
     
     if (enableSearchLocal) {
         try {
@@ -545,19 +547,6 @@ function setImageRequestedSize($img, url, targetSizePx) {
 }
 
 // Function to update the station logo based on various parameters
-// function updateStationLogo(piCode, ituCode, Program, frequency) {
-//   const logoURL = getStationLogoURL(piCode, frequency, 64);
-//   const largeLogoURL = getStationLogoURL(piCode, frequency, 300);
-//   logoImage.attr('src', logoURL).css('cursor', 'pointer');
-//   logoImage.off('click');
-//   logoImage.on('click', () => {
-//       $('#large-station-logo').attr('src', largeLogoURL);
-//       $('#popup-panel-station-logo').resizable("disable");
-//       togglePopup('#popup-panel-station-logo');
-//   });
-// }
-
-// Function to update the station logo based on various parameters
 function updateStationLogo(piCode, ituCode, Program, frequency) {
   const logoURL = getStationLogoURL(piCode, frequency, 300);
   // setImageRequestedSize(logoImage, logoURL, 64);
@@ -698,6 +687,7 @@ function updateStationLogo(piCode, ituCode, Program, frequency) {
 //         })();
 //     }
 // }
+
 
 let lastLogoState = {
     piCode: null,
@@ -903,7 +893,7 @@ async function OnlineradioboxSearch(Program, ituCode, piCode, cacheKey) {
     // Define the HTML code as a string for the logo container
     var LogoContainerHtml = '<div style="width: 5%;"></div> <!-- Spacer -->' +
         '<div class="panel-30 m-0 hide-phone" style="width: 48%" >' +
-        '    <div id="logo-container-desktop" style="width: 215px; height: 60px; display: flex; justify-content: center; align-items: center; margin: auto;">' +
+        '    <div id="logo-container-desktop" style="width: 215px; height: 64px; display: flex; justify-content: center; align-items: center; margin: auto;">' +
         '        <img id="station-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAAtJREFUGFdjYAACAAAFAAGq1chRAAAAAElFTkSuQmCC" alt="station-logo-desktop" style="max-width: 140px; max-height: 100%; margin-top: 30px; display: block; cursor: pointer;">' +
         '    </div>' +
         '</div>';
