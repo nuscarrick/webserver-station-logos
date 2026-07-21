@@ -29,7 +29,7 @@ window.forceImageReload = false; // Flag for Cache-Busting on Long Press
   
 // Define local version and Github settings
 
-const pluginVersion = '4.0';
+const pluginVersion = '1.0';
 const pluginName = "Station Logo";
 const pluginHomepageUrl = "https://github.com/nuscarrick/webserver-station-logos/releases";
 const pluginUpdateUrl = "https://raw.githubusercontent.com/nuscarrick/webserver-station-logos/main/StationLogo/updateStationLogo.js";
